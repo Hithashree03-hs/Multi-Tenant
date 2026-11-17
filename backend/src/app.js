@@ -1,0 +1,178 @@
+const express = require("express");
+const cors = require("cors");
+
+const defaultPrisma = {
+  organization: {
+    findMany: (...args) => require("./prisma").organization.findMany(...args),
+    findUnique: (...args) => require("./prisma").organization.findUnique(...args),
+    findFirst: (...args) => require("./prisma").organization.findFirst(...args),
+    create: (...args) => require("./prisma").organization.create(...args),
+    updateMany: (...args) => require("./prisma").organization.updateMany(...args),
+    deleteMany: (...args) => require("./prisma").organization.deleteMany(...args),
+  },
+  department: {
+    findMany: (...args) => require("./prisma").department.findMany(...args),
+    findFirst: (...args) => require("./prisma").department.findFirst(...args),
+    create: (...args) => require("./prisma").department.create(...args),
+    updateMany: (...args) => require("./prisma").department.updateMany(...args),
+    deleteMany: (...args) => require("./prisma").department.deleteMany(...args),
+    count: (...args) => require("./prisma").department.count(...args),
+  },
+  user: {
+    findMany: (...args) => require("./prisma").user.findMany(...args),
+    findFirst: (...args) => require("./prisma").user.findFirst(...args),
+    findUnique: (...args) => require("./prisma").user.findUnique(...args),
+    create: (...args) => require("./prisma").user.create(...args),
+    updateMany: (...args) => require("./prisma").user.updateMany(...args),
+    count: (...args) => require("./prisma").user.count(...args),
+  },
+  course: {
+    findMany: (...args) => require("./prisma").course.findMany(...args),
+    findFirst: (...args) => require("./prisma").course.findFirst(...args),
+    create: (...args) => require("./prisma").course.create(...args),
+    updateMany: (...args) => require("./prisma").course.updateMany(...args),
+    deleteMany: (...args) => require("./prisma").course.deleteMany(...args),
+    count: (...args) => require("./prisma").course.count(...args),
+  },
+  enrollment: {
+    findMany: (...args) => require("./prisma").enrollment.findMany(...args),
+    findFirst: (...args) => require("./prisma").enrollment.findFirst(...args),
+    create: (...args) => require("./prisma").enrollment.create(...args),
+    deleteMany: (...args) => require("./prisma").enrollment.deleteMany(...args),
+    count: (...args) => require("./prisma").enrollment.count(...args),
+  },
+  attendanceSession: {
+    findMany: (...args) => require("./prisma").attendanceSession.findMany(...args),
+    findFirst: (...args) => require("./prisma").attendanceSession.findFirst(...args),
+    create: (...args) => require("./prisma").attendanceSession.create(...args),
+    updateMany: (...args) => require("./prisma").attendanceSession.updateMany(...args),
+    deleteMany: (...args) => require("./prisma").attendanceSession.deleteMany(...args),
+    count: (...args) => require("./prisma").attendanceSession.count(...args),
+  },
+  attendanceRecord: {
+    findMany: (...args) => require("./prisma").attendanceRecord.findMany(...args),
+    findFirst: (...args) => require("./prisma").attendanceRecord.findFirst(...args),
+    upsert: (...args) => require("./prisma").attendanceRecord.upsert(...args),
+    create: (...args) => require("./prisma").attendanceRecord.create(...args),
+    updateMany: (...args) => require("./prisma").attendanceRecord.updateMany(...args),
+    deleteMany: (...args) => require("./prisma").attendanceRecord.deleteMany(...args),
+    count: (...args) => require("./prisma").attendanceRecord.count(...args),
+    groupBy: (...args) => require("./prisma").attendanceRecord.groupBy(...args),
+  },
+  project: {
+    findMany: (...args) => require("./prisma").project.findMany(...args),
+    findFirst: (...args) => require("./prisma").project.findFirst(...args),
+    create: (...args) => require("./prisma").project.create(...args),
+    updateMany: (...args) => require("./prisma").project.updateMany(...args),
+    deleteMany: (...args) => require("./prisma").project.deleteMany(...args),
+    count: (...args) => require("./prisma").project.count(...args),
+    groupBy: (...args) => require("./prisma").project.groupBy(...args),
+  },
+  projectMember: {
+    findMany: (...args) => require("./prisma").projectMember.findMany(...args),
+    findFirst: (...args) => require("./prisma").projectMember.findFirst(...args),
+    create: (...args) => require("./prisma").projectMember.create(...args),
+    deleteMany: (...args) => require("./prisma").projectMember.deleteMany(...args),
+    count: (...args) => require("./prisma").projectMember.count(...args),
+  },
+  task: {
+    findMany: (...args) => require("./prisma").task.findMany(...args),
+    findFirst: (...args) => require("./prisma").task.findFirst(...args),
+    create: (...args) => require("./prisma").task.create(...args),
+    updateMany: (...args) => require("./prisma").task.updateMany(...args),
+    deleteMany: (...args) => require("./prisma").task.deleteMany(...args),
+    count: (...args) => require("./prisma").task.count(...args),
+    groupBy: (...args) => require("./prisma").task.groupBy(...args),
+  },
+  projectComment: {
+    findMany: (...args) => require("./prisma").projectComment.findMany(...args),
+    findFirst: (...args) => require("./prisma").projectComment.findFirst(...args),
+    create: (...args) => require("./prisma").projectComment.create(...args),
+    updateMany: (...args) => require("./prisma").projectComment.updateMany(...args),
+    deleteMany: (...args) => require("./prisma").projectComment.deleteMany(...args),
+    count: (...args) => require("./prisma").projectComment.count(...args),
+  },
+  projectDocument: {
+    findMany: (...args) => require("./prisma").projectDocument.findMany(...args),
+    findFirst: (...args) => require("./prisma").projectDocument.findFirst(...args),
+    create: (...args) => require("./prisma").projectDocument.create(...args),
+    deleteMany: (...args) => require("./prisma").projectDocument.deleteMany(...args),
+    count: (...args) => require("./prisma").projectDocument.count(...args),
+  },
+  notification: {
+    findMany: (...args) => require("./prisma").notification.findMany(...args),
+    findFirst: (...args) => require("./prisma").notification.findFirst(...args),
+    create: (...args) => require("./prisma").notification.create(...args),
+    updateMany: (...args) => require("./prisma").notification.updateMany(...args),
+    deleteMany: (...args) => require("./prisma").notification.deleteMany(...args),
+    count: (...args) => require("./prisma").notification.count(...args),
+  },
+  $transaction: (...args) => require("./prisma").$transaction(...args),
+};
+
+function createApp(prismaClient = defaultPrisma, authOptions = {}) {
+  const app = express();
+  const configuredOrigins = process.env.FRONTEND_ORIGINS || "http://localhost:5173,http://127.0.0.1:5173";
+  const allowedOrigins = new Set(configuredOrigins.split(",").map((origin) => origin.trim()).filter(Boolean));
+  const routeOptions = {
+  jwtSecret: authOptions.jwtSecret || process.env.JWT_SECRET,
+  platformAdminSecret:
+    authOptions.platformAdminSecret || process.env.PLATFORM_ADMIN_SECRET,
+  ...authOptions,
+  resolvePrincipal:
+    authOptions.resolvePrincipal ||
+    (async (id, organizationId) =>
+      prismaClient.user.findFirst({
+        where: { id, organizationId },
+        select: { id: true, role: true, organizationId: true },
+      })),
+};
+
+  app.use(cors({
+    origin(origin, callback) {
+      // Non-browser requests have no Origin header. Browser origins must match
+      // the local defaults or the explicit deployment allow-list.
+      callback(null, !origin || allowedOrigins.has(origin));
+    },
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Authorization", "Content-Type"],
+  }));
+  app.use(express.json());
+
+  app.use("/api/auth", require("./routes/auth")(prismaClient, routeOptions));
+  app.use(
+  "/api/platform-admins",
+  require("./routes/platformAdmins")(prismaClient, routeOptions),
+);
+  app.use("/api/organizations", require("./routes/organizations")(prismaClient, routeOptions));
+  app.use("/api/departments", require("./routes/departments")(prismaClient, routeOptions));
+  app.use("/api/users", require("./routes/users")(prismaClient, routeOptions));
+  app.use("/api/courses", require("./routes/courses")(prismaClient, routeOptions));
+  app.use("/api/enrollments", require("./routes/enrollments")(prismaClient, routeOptions));
+  app.use("/api/attendance", require("./routes/attendance")(prismaClient, routeOptions));
+  app.use("/api/projects", require("./routes/projects")(prismaClient, routeOptions));
+  app.use("/api/projects", require("./routes/documents")(prismaClient, { ...routeOptions, storage: authOptions.documentStorage }));
+  app.use("/api/notifications", require("./routes/notifications")(prismaClient, routeOptions));
+  app.use("/api/dashboard", require("./routes/dashboard")(prismaClient, routeOptions));
+
+  app.get("/", (req, res) => {
+    res.json({ success: true, message: "CampusFlow API is running" });
+  });
+
+  app.use((req, res) => {
+    res.status(404).json({ success: false, message: "Route not found" });
+  });
+
+  app.use((err, req, res, next) => {
+    if (res.headersSent) return next(err);
+    if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+      return res.status(400).json({ success: false, message: "Request body must contain valid JSON" });
+    }
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  });
+
+  return app;
+}
+
+module.exports = createApp();
+module.exports.createApp = createApp;

@@ -1,0 +1,321 @@
+// Prisma schema for CampusFlow
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users       User[]
+  departments Department[]
+  courses     Course[]
+  attendanceSessions AttendanceSession[]
+  projects    Project[]
+  notifications Notification[]
+  documents   ProjectDocument[]
+}
+
+enum Role {
+  ADMIN
+  FACULTY
+  STUDENT
+}
+
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum NotificationType {
+  PROJECT_MEMBER_ADDED
+  TASK_ASSIGNED
+  COMMENT_ADDED
+  PROJECT_UPDATED
+}
+
+model User {
+  id             String       @id @default(uuid())
+  name           String
+  email          String       @unique
+  password       String
+  role           Role         @default(STUDENT)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  teaches        Course[]     @relation("CourseFaculty")
+  enrollments    Enrollment[]
+  createdAttendanceSessions AttendanceSession[] @relation("AttendanceSessionCreator")
+  markedAttendance AttendanceRecord[] @relation("AttendanceMarker")
+  projectOwnership Project[]  @relation("ProjectOwner")
+  projectCreation Project[]   @relation("ProjectCreator")
+  projectMemberships ProjectMember[]
+  createdTasks   Task[]       @relation("TaskCreator")
+  assignedTasks  Task[]       @relation("TaskAssignee")
+  comments       ProjectComment[]
+  receivedNotifications Notification[] @relation("NotificationRecipient")
+  actedNotifications Notification[] @relation("NotificationActor")
+  uploadedDocuments ProjectDocument[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([id, organizationId])
+}
+
+model Department {
+  id             String       @id @default(uuid())
+  name           String
+  code           String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  courses        Course[]     @relation("DepartmentCourses")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, code])
+  @@unique([id, organizationId])
+  @@index([organizationId, createdAt])
+}
+
+model Course {
+  id             String       @id @default(uuid())
+  code           String
+  title          String
+  description    String?
+  capacity       Int          @default(100)
+  status         CourseStatus @default(DRAFT)
+  organizationId String
+  departmentId   String
+  facultyId      String?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  department     Department   @relation("DepartmentCourses", fields: [departmentId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Cascade)
+  faculty        User?        @relation("CourseFaculty", fields: [facultyId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Cascade)
+  enrollments    Enrollment[]
+  attendanceSessions AttendanceSession[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([id, organizationId])
+  @@unique([organizationId, code])
+  @@index([organizationId, status, createdAt])
+  @@index([organizationId, facultyId])
+  @@index([organizationId, departmentId])
+}
+
+model Enrollment {
+  id             String       @id @default(uuid())
+  organizationId String
+  courseId       String
+  studentId      String
+  enrolledAt     DateTime     @default(now())
+  course         Course       @relation(fields: [courseId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Cascade)
+  student        User         @relation(fields: [studentId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Cascade)
+  attendanceRecords AttendanceRecord[]
+
+  @@unique([courseId, studentId])
+  @@unique([id, courseId, organizationId])
+  @@index([organizationId, studentId, enrolledAt])
+}
+
+model AttendanceSession {
+  id             String       @id @default(uuid())
+  organizationId String
+  courseId       String
+  createdById    String
+  title          String
+  startsAt       DateTime
+  endsAt          DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  course         Course       @relation(fields: [courseId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Cascade)
+  createdBy      User         @relation("AttendanceSessionCreator", fields: [createdById, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Cascade)
+  records        AttendanceRecord[]
+
+  @@unique([id, courseId, organizationId])
+  @@index([organizationId, courseId, startsAt])
+}
+
+model AttendanceRecord {
+  id             String           @id @default(uuid())
+  organizationId String
+  sessionId      String
+  courseId       String
+  enrollmentId   String
+  markedById     String
+  status         AttendanceStatus
+  markedAt       DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  session        AttendanceSession @relation(fields: [sessionId, courseId, organizationId], references: [id, courseId, organizationId], onDelete: Restrict, onUpdate: Cascade)
+  enrollment     Enrollment        @relation(fields: [enrollmentId, courseId, organizationId], references: [id, courseId, organizationId], onDelete: Restrict, onUpdate: Cascade)
+  markedBy       User              @relation("AttendanceMarker", fields: [markedById, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([sessionId, enrollmentId])
+  @@index([organizationId, enrollmentId, markedAt])
+}
+
+model Project {
+  id             String        @id @default(uuid())
+  organizationId String
+  ownerId        String
+  createdById    String
+  title          String
+  description    String?
+  status         ProjectStatus @default(PLANNING)
+  startsAt       DateTime?
+  dueAt          DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  owner          User          @relation("ProjectOwner", fields: [ownerId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Cascade)
+  createdBy      User          @relation("ProjectCreator", fields: [createdById, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Cascade)
+  members        ProjectMember[]
+  tasks          Task[]
+  comments       ProjectComment[]
+  documents      ProjectDocument[]
+
+  @@unique([id, organizationId])
+  @@index([organizationId, status, createdAt])
+  @@index([organizationId, ownerId])
+}
+
+model ProjectMember {
+  id             String       @id @default(uuid())
+  organizationId String
+  projectId      String
+  userId         String
+  addedAt        DateTime     @default(now())
+  project        Project      @relation(fields: [projectId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Cascade)
+  user           User         @relation(fields: [userId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([organizationId, userId, addedAt])
+}
+
+model Task {
+  id             String       @id @default(uuid())
+  organizationId String
+  projectId      String
+  createdById    String
+  assigneeId     String?
+  title          String
+  description    String?
+  status         TaskStatus   @default(TODO)
+  priority       TaskPriority @default(NORMAL)
+  dueAt          DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  project        Project      @relation(fields: [projectId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Cascade)
+  createdBy      User         @relation("TaskCreator", fields: [createdById, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Cascade)
+  assignee       User?        @relation("TaskAssignee", fields: [assigneeId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Cascade)
+  comments       ProjectComment[]
+  documents      ProjectDocument[]
+
+  @@unique([id, projectId, organizationId])
+  @@index([organizationId, projectId, status, dueAt])
+  @@index([organizationId, assigneeId, status])
+}
+
+model ProjectComment {
+  id             String    @id @default(uuid())
+  organizationId String
+  projectId      String
+  taskId         String?
+  authorId       String
+  content        String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  project        Project   @relation(fields: [projectId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Cascade)
+  task           Task?     @relation(fields: [taskId, projectId, organizationId], references: [id, projectId, organizationId], onDelete: Restrict, onUpdate: Cascade)
+  author         User      @relation(fields: [authorId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([organizationId, projectId, createdAt])
+  @@index([organizationId, taskId, createdAt])
+}
+
+model ProjectDocument {
+  id             String   @id @default(uuid())
+  organizationId String
+  projectId      String
+  taskId         String?
+  uploaderId     String
+  originalName   String
+  contentType    String
+  sizeBytes      Int
+  storageKey     String
+  createdAt      DateTime @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  project        Project  @relation(fields: [projectId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Cascade)
+  task           Task?    @relation(fields: [taskId, projectId, organizationId], references: [id, projectId, organizationId], onDelete: Restrict, onUpdate: Cascade)
+  uploader       User     @relation(fields: [uploaderId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([organizationId, storageKey])
+  @@index([organizationId, projectId, createdAt])
+}
+
+model Notification {
+  id             String           @id @default(uuid())
+  organizationId String
+  recipientId    String
+  actorId        String?
+  type           NotificationType
+  title          String
+  message        String
+  resourceType   String?
+  resourceId     String?
+  readAt         DateTime?
+  createdAt      DateTime         @default(now())
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  recipient      User             @relation("NotificationRecipient", fields: [recipientId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Cascade)
+  actor          User?            @relation("NotificationActor", fields: [actorId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([organizationId, recipientId, readAt, createdAt])
+}
+
+model PlatformAdmin {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

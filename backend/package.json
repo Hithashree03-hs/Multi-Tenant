@@ -1,0 +1,37 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "tsx src/server.js",
+    "dev": "nodemon --exec tsx src/server.js",
+    "test": "node test/auth.test.js && node test/organizations.test.js && node test/departments.test.js && node test/users.test.js && node test/courses.test.js && node test/modules.test.js && node test/bootstrap-admin.test.js",
+    "test:integration": "node test/integration-database-guard.test.js && tsx test/departments.integration.test.js && tsx test/courses.integration.test.js && tsx test/core-modules.integration.test.js && tsx test/bootstrap-admin.integration.test.js && tsx test/authorization.integration.test.js && tsx test/edit-persistence.integration.test.js",
+    "bootstrap:admin": "tsx scripts/bootstrap-admin.js",
+    "create:organization": "node scripts/create-organization.js",
+    "db:generate": "prisma generate",
+    "db:status": "prisma migrate status",
+    "db:migrate": "prisma migrate deploy"
+  
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.9.1",
+    "@prisma/client": "^7.9.1",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.1",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14",
+    "prisma": "^7.9.1",
+    "tsx": "^4.23.12"
+  }
+}
